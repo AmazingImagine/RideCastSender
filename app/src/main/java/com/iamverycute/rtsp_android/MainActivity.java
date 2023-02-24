@@ -148,7 +148,6 @@ public class MainActivity extends BaseActivity implements ActivityResultCallback
             mDialog.setCancelable(false);
             mDialog.setContentView(R.layout.loading_progressba);
 
-
             //搜索设备
             connectServer();
             //StartCast();

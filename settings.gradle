@@ -15,5 +15,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "RTSP.Droid"
+rootProject.name = "RideCastSender"
 include ':app'

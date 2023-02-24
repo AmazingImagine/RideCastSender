@@ -86,7 +86,7 @@ public class SendSocket {
             byte bytes[] = new byte[1024];
             int len;
             while ((len = mInputStream.read(bytes)) == -1) {
-                Thread.sleep(1000);
+                Thread.sleep(500);
             }
 
             String strMsg = new String(bytes,0,len);
