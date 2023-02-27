@@ -1,8 +1,9 @@
 <resources>
-    <string name="app_name">RideCastApp</string>
-    <string name="channel_id">RTSP_Stream_Notify</string>
+    <string name="app_name">RideCastSender</string>
+    <string name="channel_id">RideCast_Stream_Notify</string>
     <string name="granting">请授予屏幕录制权限</string>
     <string name="stopped">已停止运行</string>
     <string name="opensource"></string>
-    <string name="project_url">https://github.com/iamverycute/RTSP.Droid</string>
+    <string name="project_url">https://github.com</string>
+    <string name="accessibility_service_description">Allow other devices to control your phone using virtual touch, when RideHome screen sharing is established</string>
 </resources>

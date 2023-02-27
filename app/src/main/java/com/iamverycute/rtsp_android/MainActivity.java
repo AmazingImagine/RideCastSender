@@ -7,6 +7,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
@@ -37,6 +38,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 
+import com.iamverycute.AccessibilityService.InputService;
 import com.iamverycute.wifip2p.activity.BaseActivity;
 import com.iamverycute.wifip2p.activity.SendTask;
 import com.iamverycute.wifip2p.socket.SendSocket;
@@ -101,6 +103,14 @@ public class MainActivity extends BaseActivity implements ActivityResultCallback
         mHandler = new Handler(this.getMainLooper());
         switchButton = findViewById(R.id.checkbox);
         switchButton.setOnCheckedChangeListener(this);
+
+        Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+        PackageManager packageManager = getPackageManager();
+        if (intent.resolveActivity(packageManager) != null) {
+            startActivity(intent);
+        }
+
+        bindService(new Intent(MainActivity.this, InputService.class), MainActivity.this, Context.BIND_AUTO_CREATE);
     }
 
     @AfterPermissionGranted(1000)
@@ -150,18 +160,17 @@ public class MainActivity extends BaseActivity implements ActivityResultCallback
 
             //搜索设备
             connectServer();
-            //StartCast();
-
-//            bindService(new Intent(this, SLService.class), this, Context.BIND_AUTO_CREATE);
-//            mHandler.postDelayed(() -> startActivityForResult.launch(event.Granting()), 1000);
         } else {
-            event.Dispose();
+            if(null != event){
+                event.Dispose();
+            }
         }
     }
 
     @Override
     public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-        event = ((SLBinder) iBinder).getContext();
+        if(!componentName.toString().contains("InputService"))
+            event = ((SLBinder) iBinder).getContext();
     }
 
     @Override
@@ -287,7 +296,8 @@ public class MainActivity extends BaseActivity implements ActivityResultCallback
         }
 
         //进度条消失
-        mDialog.dismiss();
+        if(mDialog!=null)
+            mDialog.dismiss();
         showDeviceInfo();
     }
 

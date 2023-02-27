@@ -5,6 +5,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
+import com.iamverycute.AccessibilityService.InputService;
 import com.iamverycute.rtsp_android.MainActivity;
 
 import java.io.File;
@@ -34,14 +35,19 @@ public class SendSocket {
     }
 
     public void OnStreamReady(String strUrl){
-        if(null != mOutStream){
-            String strMsg = "StreamOk:"+strUrl+";";
-            try {
-                mOutStream.write(strMsg.getBytes());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+        new Thread(new Runnable(){
+            @Override
+            public void run() {
+                if(null != mOutStream){
+                    String strMsg = "StreamOk:"+strUrl+";\n";
+                    try {
+                        mOutStream.write(strMsg.getBytes());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
             }
-        }
+        }).start();
     }
 
     private Handler mHandler = new Handler(Looper.getMainLooper()) {
@@ -75,6 +81,38 @@ public class SendSocket {
         mlistener = listener;
     }
 
+    private void HandleMotion(String strMotion){
+        String[] motArray = strMotion.split(":|;");
+        int mask = Integer.parseInt(motArray[1]);
+        float x = Float.parseFloat(motArray[2]);
+        float y = Float.parseFloat(motArray[3]);
+        InputService.getInstance().onMouseInput(mask,x,y);
+    }
+
+    private String  AnalyzeRecvMsg(String  strMsg){
+        String strRet = new String("");
+        String[] msgArray = strMsg.split("\n");
+        for(String line:msgArray){
+            if(line.contains(";")){
+                if(line.contains("SinkOk")){
+                    MainActivity.getInstance().StartCast();
+                    continue;
+                }
+
+                if(line.contains("MotionEvent")){
+                    Log.d(TAG,line);
+                    // analyze then action
+                    HandleMotion(line);
+                    continue;
+                }
+            } else {
+                strRet = line;
+                break;
+            }
+        }
+        return strRet;
+    }
+
     public void createSendSocket() {
         try {
             mSocket = new Socket();
@@ -85,16 +123,20 @@ public class SendSocket {
 
             byte bytes[] = new byte[1024];
             int len;
-            while ((len = mInputStream.read(bytes)) == -1) {
-                Thread.sleep(500);
-            }
+            String strRecv = "";
+            while ((len = mInputStream.read(bytes))!=-1) {
+                if(len>0){
+                    String strMsg = new String(bytes,0,len);
+                    strRecv += strMsg;
 
-            String strMsg = new String(bytes,0,len);
-            if(strMsg.contains("SinkOk")){
-                MainActivity.getInstance().StartCast();
-            }
+                    Log.d(TAG,strMsg);
 
-            Log.e(TAG, "文件发送成功");
+                    // process strRecv
+                    strRecv = AnalyzeRecvMsg(strRecv);
+                }
+
+                Thread.sleep(20);
+            }
         } catch (Exception e) {
             Log.e(TAG,e.toString());
             Log.e(TAG, "文件发送异常");
