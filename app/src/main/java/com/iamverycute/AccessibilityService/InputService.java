@@ -12,243 +12,93 @@ import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
 import android.graphics.Path;
 import android.os.Build;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
+
+import com.iamverycute.rtsp_android.MainActivity;
+
 import java.util.*;
 
 public class InputService extends AccessibilityService {
-    final int LIFT_DOWN = 9;
-    final int LIFT_MOVE=8;
-    final int LIFT_UP=10;
-    final int RIGHT_UP=18;
-    final int WHEEL_BUTTON_DOWN=33;
-    final int WHEEL_BUTTON_UP=34;
-    final int WHEEL_DOWN=523331;
-    final int WHEEL_UP=963;
-    final int WHEEL_STEP=120;
-    final long WHEEL_DURATION=50L;
-    final long  LONG_TAP_DELAY=200L;
+    final int ACTION_DOWN = 0;
+    final int ACTION_MOVE = 1;
+    final int ACTION_UP = 2;
+    final int ACTION_HOME = 3;
+    final int ACTION_BACK = 4;
+    final int ACTION_RECENTS = 5;
+
     private String logTag = "input service";
-    private Boolean leftIsDown = false;
     private Path touchPath = new Path();
-    private long lastTouchGestureStartTime = 0L;
-    private int mouseX = 0;
-    private int mouseY = 0;
-    private Timer timer = new Timer();
-    private TimerTask recentActionTask = null;
-    private LinkedList <GestureDescription> wheelActionsQueue = new LinkedList <GestureDescription> ();
-    private Boolean isWheelActionsPolling = false;
-    private Boolean isWaitingLongPress = false;
+    private int  x_screen_size = 0;
+    private int  y_screen_size = 0;
+    private long lastTouchGestureStartTime;
+
 
     private static InputService  instance_;
-
     public static InputService getInstance(){
         return instance_;
     }
 
     private float screenScale = 1.0F;
-
     public void SetScreenScale(float scale){
         screenScale = scale;
     }
-
     @RequiresApi(Build.VERSION_CODES.N)
     public void onMouseInput(int mask, float _x, float _y) {
-        GestureDescription.Builder builder = new GestureDescription.Builder();
-        Path p = new Path();
-        p.moveTo(_x, _y);
-        p.lineTo(_x+10, _y+10);
-        builder.addStroke(new GestureDescription.StrokeDescription(p, 10L, 200L));
-        GestureDescription gesture = builder.build();
-        boolean isDispatched = dispatchGesture(gesture, new GestureResultCallback() {
-            @Override
-            public void onCompleted(GestureDescription gestureDescription) {
-                super.onCompleted(gestureDescription);
+        float xPos = _x * x_screen_size;
+        float yPos = _y * y_screen_size;
+        switch (mask){
+            case ACTION_DOWN:
+            {
+                startGesture(xPos, yPos);
             }
-
-            @Override
-            public void onCancelled(GestureDescription gestureDescription) {
-                super.onCancelled(gestureDescription);
+            break;
+            case ACTION_MOVE:
+            {
+                continueGesture(xPos, yPos);
             }
-        }, null);
-        Log.e(logTag, "isDispatched:"+isDispatched);
-        //Toast.makeText(FingerprintService.this, "Was it dispatched? " + isDispatched, Toast.LENGTH_SHORT).show();
-
-//        touchPath = new Path();
-//        touchPath.moveTo(500.0f, 100.0f);
-//        touchPath.lineTo(300.0f, 110.0f);
-//        lastTouchGestureStartTime = System.currentTimeMillis();
-//        try {
-//            touchPath.lineTo(10.0f, 100.0f);
-//            GestureDescription.StrokeDescription stroke = new GestureDescription.StrokeDescription(
-//                    touchPath,
-//                    0,
-//                    1
-//            );
-//            GestureDescription.Builder builder = new GestureDescription.Builder();
-//            builder.addStroke(stroke);
-//            Log.d(logTag, "end gesture x:$x y:$y time:$duration");
-//            dispatchGesture(builder.build(), null, null);
-//        } catch (Exception e){
-//            Log.e(logTag, "endGesture error:$e");
-//        }
-
-//        float x = max(0.0f, _x);
-//        float y = max(0.0f, _y);
-//
-//        if (mask == 0 || mask == LIFT_MOVE) {
-//            int oldX = mouseX;
-//            int oldY = mouseY;
-//            mouseX = (int) (x * screenScale);
-//            mouseY = (int) (y * screenScale);
-//            if (isWaitingLongPress) {
-//                int delta = abs(oldX - mouseX) + abs(oldY - mouseY);
-//                Log.d(logTag, "delta:$delta");
-//                if (delta > 8) {
-//                    isWaitingLongPress = false;
-//                }
-//            }
-//        }
-//
-//        // left button down ,was up
-//        if (mask == LIFT_DOWN) {
-//            isWaitingLongPress = true;
-//            timer.schedule(new TimerTask() {
-//                @Override
-//                public void run() {
-//                    if (isWaitingLongPress) {
-//                        isWaitingLongPress = false;
-//                        leftIsDown = false;
-//                        endGesture(mouseX, mouseY);
-//                    }
-//                }
-//            },LONG_TAP_DELAY * 4);
-//
-//            leftIsDown = true;
-//            startGesture(mouseX, mouseY);
-//            return;
-//        }
-//
-//        // left down ,was down
-//        if (leftIsDown) {
-//            continueGesture(mouseX, mouseY);
-//        }
-//
-//        // left up ,was down
-//        if (mask == LIFT_UP) {
-//            if (leftIsDown) {
-//                leftIsDown = false;
-//                isWaitingLongPress = false;
-//                endGesture(mouseX, mouseY);
-//                return;
-//            }
-//        }
-//
-//        if (mask == RIGHT_UP) {
-//            performGlobalAction(GLOBAL_ACTION_BACK);
-//            return;
-//        }
-////////////////////////////////////////////////////////////////////////////////
-        // long WHEEL_BUTTON_DOWN -> GLOBAL_ACTION_RECENTS
-//        if (mask == WHEEL_BUTTON_DOWN) {
-//            timer.purge();
-//            recentActionTask = new TimerTask() {
-//                @Override
-//                public void run() {
-//                    performGlobalAction(GLOBAL_ACTION_RECENTS);
-//                    recentActionTask = null;
-//                }
-//            };
-//            timer.schedule(recentActionTask, LONG_TAP_DELAY);
-//        }
-//
-//        // wheel button up
-//        if (mask == WHEEL_BUTTON_UP) {
-//            if (recentActionTask != null) {
-//                recentActionTask.cancel();
-//                performGlobalAction(GLOBAL_ACTION_HOME);
-//            }
-//            return;
-//        }
-//
-//        if (mask == WHEEL_DOWN) {
-//            if (mouseY < WHEEL_STEP) {
-//                return;
-//            }
-//            Path path = new Path();
-//            path.moveTo(mouseX, mouseY);
-//            path.lineTo(mouseX, mouseY - WHEEL_STEP);
-//            GestureDescription.StrokeDescription stroke = new  GestureDescription.StrokeDescription(
-//                    path,
-//                    0,
-//                    WHEEL_DURATION
-//            );
-//            GestureDescription.Builder builder = new GestureDescription.Builder();
-//            builder.addStroke(stroke);
-//            wheelActionsQueue.offer(builder.build());
-//            consumeWheelActions();
-//        }
-//
-//        if (mask == WHEEL_UP) {
-//            if (mouseY < WHEEL_STEP) {
-//                return;
-//            }
-//            Path path = new Path();
-//            path.moveTo(mouseX, mouseY);
-//            path.lineTo(mouseX, (mouseY + WHEEL_STEP));
-//            GestureDescription.StrokeDescription stroke = new GestureDescription.StrokeDescription(
-//                    path,
-//                    0,
-//                    WHEEL_DURATION
-//            );
-//            GestureDescription.Builder builder = new GestureDescription.Builder();
-//            builder.addStroke(stroke);
-//            wheelActionsQueue.offer(builder.build());
-//            consumeWheelActions();
-//        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.N)
-    private void consumeWheelActions() {
-        if (isWheelActionsPolling) {
-            return;
-        } else {
-            isWheelActionsPolling = true;
-        }
-
-        GestureDescription gd = wheelActionsQueue.poll();
-        if(gd!=null){
-            dispatchGesture(gd, null, null);
-            timer.purge();
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    isWheelActionsPolling = false;
-                    consumeWheelActions();
-                }
-            },WHEEL_DURATION + 10);
-        }
-        else {
-            isWheelActionsPolling = false;
-            return;
+            break;
+            case ACTION_UP:
+            {
+                endGesture(xPos, yPos);
+            }
+            break;
+            case ACTION_HOME:
+            {
+                performGlobalAction(GLOBAL_ACTION_HOME);
+            }
+            break;
+            case ACTION_BACK:
+            {
+                performGlobalAction(GLOBAL_ACTION_BACK);
+            }
+            break;
+            case ACTION_RECENTS:
+            {
+                performGlobalAction(GLOBAL_ACTION_RECENTS);
+            }
+            break;
         }
     }
 
-    private void startGesture(int x, int y) {
+
+    private void startGesture(float x, float y) {
         touchPath = new Path();
         touchPath.moveTo(x, y);
         lastTouchGestureStartTime = System.currentTimeMillis();
     }
 
-    private void continueGesture(int x, int y) {
+    private void continueGesture(float x, float y) {
         touchPath.lineTo(x, y);
     }
 
     @RequiresApi(Build.VERSION_CODES.N)
-    private void endGesture(int x, int y) {
+    private void endGesture(float x, float y) {
         try {
             touchPath.lineTo(x, y);
             var duration = System.currentTimeMillis() - lastTouchGestureStartTime;
@@ -269,9 +119,21 @@ public class InputService extends AccessibilityService {
         }
     }
 
+    private void getScreenSize(){
+        WindowManager windowManager = MainActivity.getInstance().getWindow().getWindowManager();
+        DisplayMetrics metrics = new DisplayMetrics();
+        windowManager.getDefaultDisplay().getRealMetrics(metrics);
+        //屏幕实际宽度（像素个数）
+        x_screen_size = metrics.widthPixels;
+        //屏幕实际高度（像素个数）
+        y_screen_size = metrics.heightPixels;
+    }
+
+
     @Override
     public void  onServiceConnected() {
         super.onServiceConnected();
+        getScreenSize();
         instance_ = this;
         Log.d(logTag, "onServiceConnected!");
     }
