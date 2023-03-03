@@ -94,12 +94,12 @@ public class SLService extends Service implements Runnable, ConnectCheckerRtsp, 
         startForeground(1, notify, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
     }
 
-    public void Success(int resultCode,Intent data, TextView tv) {
+    public void Success(int resultCode,Intent data) {
         this.pm = manager.getMediaProjection(resultCode,data);
-        tv.setText("RTSP地址："+rtsp_url);
         ShowNotify(rtsp_url);
         REC_YOUR_SCREEN();
         // tell the sink to play the rtsp stream
+        MainActivity.getInstance().OnNotify("屏幕投射成功");
         MainActivity.getInstance().OnStreamReady(rtsp_url);
     }
 

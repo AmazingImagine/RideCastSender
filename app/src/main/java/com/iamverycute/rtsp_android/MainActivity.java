@@ -56,6 +56,8 @@ public class MainActivity extends BaseActivity implements ActivityResultCallback
     private Handler mHandler;
     private OnRecordingEvent event;
     private SwitchCompat switchButton;
+
+    private SwitchCompat reCtrlButton;
     private ActivityResultLauncher<Intent> startActivityForResult;
 
     private ListView mTvDevice;
@@ -69,9 +71,20 @@ public class MainActivity extends BaseActivity implements ActivityResultCallback
         return instance;
     }
 
+    public void OnNotify(String msg){
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                TextView tv = findViewById(R.id.textViewMsg);
+                tv.setText(msg);
+            }
+        });
+    }
+
     public void StartCast(){
         bindService(new Intent(MainActivity.this, SLService.class), MainActivity.this, Context.BIND_AUTO_CREATE);
         mHandler.postDelayed(() -> startActivityForResult.launch(event.Granting()), 1000);
+        OnNotify("屏幕投射启动中");
     }
 
     public void OnStreamReady(String strUrl){
@@ -104,11 +117,8 @@ public class MainActivity extends BaseActivity implements ActivityResultCallback
         switchButton = findViewById(R.id.checkbox);
         switchButton.setOnCheckedChangeListener(this);
 
-        Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-        PackageManager packageManager = getPackageManager();
-        if (intent.resolveActivity(packageManager) != null) {
-            startActivity(intent);
-        }
+        reCtrlButton = findViewById(R.id.reversecontrol);
+        reCtrlButton.setOnCheckedChangeListener(this);
 
         bindService(new Intent(MainActivity.this, InputService.class), MainActivity.this, Context.BIND_AUTO_CREATE);
     }
@@ -144,25 +154,68 @@ public class MainActivity extends BaseActivity implements ActivityResultCallback
     public void onActivityResult(ActivityResult result) {
         int resultCode = result.getResultCode();
         if (resultCode == Activity.RESULT_OK) {
-            event.Success(resultCode, result.getData(), findViewById(R.id.rtsp_url));
+            event.Success(resultCode, result.getData());
         } else {
             switchButton.setChecked(false);
         }
     }
 
     @Override
-    public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-        if (b) {
-            mDialog = new AlertDialog.Builder(this, R.style.Transparent).create();
-            mDialog.show();
-            mDialog.setCancelable(false);
-            mDialog.setContentView(R.layout.loading_progressba);
+    protected void onResume() {
+        boolean ret = isAccessibilitySettingsOn(this);
+        reCtrlButton.setChecked(ret);
+        super.onResume();
+    }
 
-            //搜索设备
-            connectServer();
-        } else {
-            if(null != event){
-                event.Dispose();
+    /**
+     * 检查Accessibility权限
+     * */
+    public static boolean isAccessibilitySettingsOn(Context context) {
+        int accessibilityEnabled = 0;
+        try {
+            accessibilityEnabled = Settings.Secure.getInt(context.getContentResolver(),
+                    android.provider.Settings.Secure.ACCESSIBILITY_ENABLED);
+        } catch (Settings.SettingNotFoundException e) {
+            Log.e(TAG, e.getMessage());
+        }
+
+        if (accessibilityEnabled == 1) {
+            String services = Settings.Secure.getString(context.getContentResolver(),
+                    Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+            if (services != null) {
+                return services.toLowerCase().contains(context.getPackageName().toLowerCase());
+            }
+        }
+
+        return false;
+    }
+
+
+    @Override
+    public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+        int id = compoundButton.getId();
+        if(id == R.id.reversecontrol){
+            if(b){
+                Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                PackageManager packageManager = getPackageManager();
+                if (intent.resolveActivity(packageManager) != null) {
+                    startActivity(intent);
+                }
+            }
+        }
+        else if(id == R.id.checkbox){
+            if (b) {
+                mDialog = new AlertDialog.Builder(this, R.style.Transparent).create();
+                mDialog.show();
+                mDialog.setCancelable(false);
+                mDialog.setContentView(R.layout.loading_progressba);
+
+                //搜索设备
+                connectServer();
+            } else {
+                if(null != event){
+                    event.Dispose();
+                }
             }
         }
     }
@@ -212,7 +265,7 @@ public class MainActivity extends BaseActivity implements ActivityResultCallback
     }
 
     public interface OnRecordingEvent {
-        void Success(int resultCode, Intent data, TextView tv);
+        void Success(int resultCode, Intent data);
 
         Intent Granting();
 
@@ -223,6 +276,8 @@ public class MainActivity extends BaseActivity implements ActivityResultCallback
      * 搜索设备
      */
     private void connectServer() {
+        clearDeviceView();
+
         WifiP2pManager.ActionListener listener = new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
@@ -245,6 +300,13 @@ public class MainActivity extends BaseActivity implements ActivityResultCallback
                 mDialog.dismiss();
             }
         },5 * 1000);  //延迟10秒执行
+    }
+
+    private void clearDeviceView() {
+        mListDeviceName.clear();
+        mListDevice.clear();
+        ArrayAdapter<String> adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, mListDeviceName);
+        mTvDevice.setAdapter(adapter);
     }
 
     @Override

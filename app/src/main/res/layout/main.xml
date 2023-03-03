@@ -1,31 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <androidx.appcompat.widget.SwitchCompat
-        android:id="@+id/checkbox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:scaleX="2"
-        android:scaleY="2" />
-
-    <TextView
-        android:id="@+id/rtsp_url"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/checkbox"
-        android:layout_marginBottom="50dp"
-        android:gravity="center"
-        android:textIsSelectable="true"
-        android:textSize="32sp"
-        tools:ignore="SpeakableTextPresentCheck,TouchTargetSizeCheck" />
+        android:layout_height="100dp"
+        android:orientation="vertical">
 
-    <ListView
-        android:id="@+id/lv_device"
+        <TextView
+            android:id="@+id/textViewMsg"
+            android:layout_width="wrap_content"
+            android:layout_height="98dp"
+            android:layout_weight="1"
+            android:editable="false"
+            android:fontFamily="sans-serif-black"
+            android:gravity="center"
+            android:layout_gravity="center_horizontal"
+            android:textSize="28dp" />
+        <View
+            android:id="@+id/divider1"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="?android:attr/listDivider" />
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"/>
-</RelativeLayout>
+        android:layout_height="50dp"
+        android:orientation="horizontal">
+
+        <Space
+            android:layout_width="10dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/checkbox"
+            android:layout_width="90dp"
+            android:layout_height="50dp"
+            android:text="搜索："
+            android:scaleX="1.2"
+            android:scaleY="1.2" />
+
+        <Space
+            android:layout_width="30dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/reversecontrol"
+            android:layout_width="90dp"
+            android:layout_height="50dp"
+            android:text="反控："
+            android:scaleX="1.2"
+            android:scaleY="1.2" />
+
+        <Space
+            android:layout_width="10dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <View
+            android:id="@+id/divider"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="?android:attr/listDivider" />
+
+        <ListView
+            android:id="@+id/lv_device"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp">
+        </ListView>
+    </LinearLayout>
+</LinearLayout>

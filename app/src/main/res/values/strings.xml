@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">RideCastSender</string>
     <string name="channel_id">RideCast_Stream_Notify</string>
-    <string name="granting">请授予屏幕录制权限</string>
+    <string name="granting">RideCastSender正在录制您的屏幕</string>
     <string name="stopped">已停止运行</string>
     <string name="opensource"></string>
     <string name="project_url">https://github.com</string>
