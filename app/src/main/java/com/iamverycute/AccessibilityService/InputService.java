@@ -37,6 +37,7 @@ public class InputService extends AccessibilityService {
     private int  x_screen_size = 0;
     private int  y_screen_size = 0;
     private long lastTouchGestureStartTime;
+    private boolean leftIsDown = false;
 
 
     private static InputService  instance_;
@@ -55,17 +56,22 @@ public class InputService extends AccessibilityService {
         switch (mask){
             case ACTION_DOWN:
             {
+                leftIsDown = true;
                 startGesture(xPos, yPos);
             }
             break;
             case ACTION_MOVE:
             {
-                continueGesture(xPos, yPos);
+                if(leftIsDown)
+                    continueGesture(xPos, yPos);
             }
             break;
             case ACTION_UP:
             {
-                endGesture(xPos, yPos);
+                if(leftIsDown){
+                    leftIsDown = false;
+                    endGesture(xPos, yPos);
+                }
             }
             break;
             case ACTION_HOME:
